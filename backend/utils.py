@@ -1,44 +1,67 @@
+import os
 import logging
 from google.cloud import bigquery
 from data_agent.constants import PROJECT_ID, DATASET_NAME, TABLE_NAMES
 
+
+
+
+# ------------------------------
+# 0️⃣ Helper: Sanitize user input for logs
+# ------------------------------
+def sanitize_for_log(value: str) -> str:
+    """Sanitize string to prevent log injection."""
+    if not isinstance(value, str):
+        value = str(value)
+    # Replace newlines and carriage returns
+    return value.replace("\n", "\\n").replace("\r", "\\r")
+
+
+# ------------------------------
+# 1️⃣ Setup general/public logger
+# ------------------------------
+public_logger = logging.getLogger("public")
+public_logger.setLevel(logging.INFO)
+console_handler = logging.StreamHandler()
+console_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+console_handler.setFormatter(console_formatter)
+public_logger.addHandler(console_handler)
+
+# ------------------------------
+# 2️⃣ Setup secure logger for internal errors
+# ------------------------------
+# Ensure log folder exists
+secure_log_dir = "C:\\tmp"
+os.makedirs(secure_log_dir, exist_ok=True)
+secure_log_file = os.path.join(secure_log_dir, "secure_app.log")
+
+secure_logger = logging.getLogger("secure")
+secure_logger.setLevel(logging.ERROR)
+file_handler = logging.FileHandler(secure_log_file)
+file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+file_handler.setFormatter(file_formatter)
+secure_logger.addHandler(file_handler)
+
+# ------------------------------
+# 3️⃣ BigQuery utility functions
+# ------------------------------
+
 def get_table_description(table_name: str) -> str:
-    """Fetches the description for a given table from BigQuery."""
     try:
         client = bigquery.Client(project=PROJECT_ID)
         table_id = f"{PROJECT_ID}.{DATASET_NAME}.{table_name}"
-        table = client.get_table(table_id)  # Make an API request.
+        table = client.get_table(table_id)
         return table.description if table.description else ""
     except Exception as e:
-        logging.error(f"Error fetching table description for {table_name}: {e}")
+        public_logger.error(f"Error fetching table description for {sanitize_for_log(table_name)}. Please contact support.")
+        secure_logger.error(f"Failed to fetch table description for {sanitize_for_log(table_name)}.\nException: {sanitize_for_log(e)}", exc_info=True)
         return ""
 
+
 def get_table_ddl_strings() -> list[dict]:
-    """
-    Fetches the DDL strings, table type, and creation time
-    for specified base tables, or all base tables if no list is provided,
-    in the given Google BigQuery project and dataset.
-
-    Args:
-        project_id: The Google Cloud project ID.
-        dataset_name: The BigQuery dataset ID.
-        table_names_list: An optional list of table names. If provided, DDLs
-                          will be fetched only for these tables. If None or empty,
-                          DDLs for all base tables in the dataset will be fetched.
-
-    Returns:
-        A list of dictionaries, where each dictionary contains:
-            - 'table_type': The type of the table (e.g., 'BASE TABLE').
-            - 'creation_time': The timestamp of when the table was created.
-            - 'ddl': The raw DDL string for the table.
-        Returns an empty list if no tables are found or if an error occurs.
-    """
     all_table_ddls = []
     client = bigquery.Client(project=PROJECT_ID)
 
-    # Base SQL query to fetch basic table information including the DDL string
-    # We still select table_name for logging and potential internal use,
-    # but it won't be in the final returned dictionary per user request.
     base_query = f"""
         SELECT
             table_catalog,
@@ -46,120 +69,89 @@ def get_table_ddl_strings() -> list[dict]:
             table_name, 
             table_type,
             creation_time,
-            ddl  -- The DDL string for the table
+            ddl
         FROM
             `{PROJECT_ID}.{DATASET_NAME}.INFORMATION_SCHEMA.TABLES`
         WHERE
-            table_type = 'BASE TABLE'  -- Target only base tables (excluding views, etc.)
+            table_type = 'BASE TABLE'
     """
 
-    # Add condition for specific table names if provided
-    if TABLE_NAMES and len(TABLE_NAMES) > 0:
-        # Format table names for the IN clause: ('table1', 'table2', ...)
+    if TABLE_NAMES:
         formatted_table_names = ", ".join([f"'{name}'" for name in TABLE_NAMES])
         base_query += f" AND table_name IN ({formatted_table_names})"
-
     base_query += " ORDER BY table_name;"
-    final_query = base_query
 
     try:
-        query_job = client.query(final_query)
-        results = query_job.result()  # Wait for the query to complete
-
+        query_job = client.query(base_query)
+        results = query_job.result()
         for row in results:
-            if not row.ddl:
-                continue
-
-            # Construct the dictionary with only the requested fields
-            table_info = {
-                "table_catalog": row.table_catalog,
-                "table_schema": row.table_schema,
-                "table_name": row.table_name,
-                "table_type": row.table_type,
-                "creation_time": row.creation_time,
-                "ddl": row.ddl
-            }
-            all_table_ddls.append(table_info)
-
+            if row.ddl:
+                all_table_ddls.append({
+                    "table_catalog": row.table_catalog,
+                    "table_schema": row.table_schema,
+                    "table_name": row.table_name,
+                    "table_type": row.table_type,
+                    "creation_time": row.creation_time,
+                    "ddl": row.ddl
+                })
         return all_table_ddls
 
     except Exception as e:
-        print(
-            f"--- Failed to fetch DDL strings ---",
-            exc_info=True  # Automatically add exception info (like traceback)
-        )
+        public_logger.error("Failed to fetch DDL strings. Please contact support.")
+        secure_logger.error(f"Failed to fetch DDL strings.\nException: {sanitize_for_log(e)}", exc_info=True)
         return []
 
+
 def get_total_rows(table_name: str) -> int:
-    """Fetches the total number of rows for a given table from BigQuery."""
     try:
         client = bigquery.Client(project=PROJECT_ID)
-        query = f"""
-            SELECT COUNT(*) FROM `{PROJECT_ID}.{DATASET_NAME}.{table_name}`
-        """
-        query_job = client.query(query)  # Make an API request.
-        results = query_job.result()  # Waits for the query to finish.
+        query = f"SELECT COUNT(*) FROM `{PROJECT_ID}.{DATASET_NAME}.{table_name}`"
+        query_job = client.query(query)
+        results = query_job.result()
         for row in results:
             return row[0]
     except Exception as e:
-        logging.error(f"Error fetching total rows for {table_name}: {e}")
+        public_logger.error(f"Failed to fetch total rows for {sanitize_for_log(table_name)}.")
+        secure_logger.error(f"Error fetching total rows for {sanitize_for_log(table_name)}.\nException: {e}", exc_info=True)
         return 0
 
+
 def get_total_column_count() -> int:
-    """Fetches the total number of columns across all tables in the dataset from BigQuery."""
     try:
         client = bigquery.Client(project=PROJECT_ID)
-        query = f"""
-            SELECT
-                count(*) as total_columns
-            FROM
-                `{PROJECT_ID}.{DATASET_NAME}.INFORMATION_SCHEMA.COLUMNS`
-        """
-        query_job = client.query(query)  # Make an API request.
-        results = query_job.result()  # Waits for the query to finish.
+        query = f"SELECT count(*) as total_columns FROM `{PROJECT_ID}.{DATASET_NAME}.INFORMATION_SCHEMA.COLUMNS`"
+        query_job = client.query(query)
+        results = query_job.result()
         for row in results:
             return row.total_columns
     except Exception as e:
-        logging.error(f"Error fetching total column count: {e}")
+        public_logger.error("Failed to fetch total column count.")
+        secure_logger.error(f"Error fetching total column count.\nException: {sanitize_for_log(e)}", exc_info=True)
         return 0
 
+
 def fetch_sample_data_for_single_table(table_name: str, num_rows: int = 3) -> list[dict]:
-    """
-    Fetches a few sample rows from a specific table in the dataset.
-
-    Args:
-        table_name: The name of the table to fetch data from.
-        num_rows: The number of sample rows to fetch.
-
-    Returns:
-        A list of dictionaries representing the sample rows.
-        Returns an empty list if no data can be fetched or an error occurs.
-    """
     if not PROJECT_ID or not DATASET_NAME:
-        logging.error("PROJECT_ID and DATASET_NAME must be configured in constants.py to fetch sample data.")
+        public_logger.error("PROJECT_ID and DATASET_NAME must be configured to fetch sample data.")
         return []
+
     try:
         client = bigquery.Client(project=PROJECT_ID)
     except Exception as e:
-        logging.error(f"Failed to create BigQuery client for project {PROJECT_ID}: {e}", exc_info=True)
+        public_logger.error(f"Failed to create BigQuery client for project {PROJECT_ID}.")
+        secure_logger.error(f"BigQuery client creation failed for project {PROJECT_ID}.\nException: {e}", exc_info=True)
         return []
 
     full_table_name = f"{PROJECT_ID}.{DATASET_NAME}.{table_name}"
     try:
-        logging.info(f"Fetching sample data for table (using list_rows): {full_table_name}")
-
+        public_logger.info(f"Fetching sample data for table: {full_table_name}")
         table_reference = bigquery.table.TableReference.from_string(full_table_name, default_project=PROJECT_ID)
-
-        # Fetch rows using list_rows.
         rows_iterator = client.list_rows(table_reference, max_results=num_rows)
-
         table_sample_rows = [dict(row.items()) for row in rows_iterator]
-
         if not table_sample_rows:
-            logging.info(f"No sample data found for table '{full_table_name}' using list_rows.")
-
+            public_logger.info(f"No sample data found for table '{full_table_name}'.")
         return table_sample_rows
-
     except Exception as e:
-        logging.error(f"Error fetching sample data for table {full_table_name} using list_rows: {e}", exc_info=True)
+        public_logger.error(f"Error fetching sample data for {sanitize_for_log(full_table_name)}.")
+        secure_logger.error(f"Error fetching sample data for {sanitize_for_log(full_table_name)}.\nException: {sanitize_for_log(e)}", exc_info=True)
         return []

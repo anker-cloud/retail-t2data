@@ -12,16 +12,26 @@ const LoginPage = ({ onLogin }) => {
         e.preventDefault();
         
         // 1. Hardcoded password for the POC is checked here.
-        const POC_PASSWORD = "mahindra123";
+        // Define user-specific passwords
+        const USER_PASSWORDS = {
+            Rucha: "Rucha@vihaan215",
+            Pavan: "Pavan@vihaan215"
+        };
+        const DEFAULT_PASSWORD = "mahindra123";
 
-        // 2. This is the check. If it fails, the function stops and shows an error.
-        if (password !== POC_PASSWORD) {
-            setError("Invalid password.");
-            return; 
-        }
-
+        // 2. Check if username is empty
         if (!userId.trim()) {
             setError("Username cannot be empty.");
+            return;
+        }
+
+        // 3. This is the check. If it fails, the function stops and shows an error.
+        // Get the expected password based on userId
+        const expectedPassword = USER_PASSWORDS[userId] || DEFAULT_PASSWORD;
+
+        // Check password with case-sensitive username
+        if (password !== expectedPassword) {
+            setError("Invalid password.");
             return;
         }
 
