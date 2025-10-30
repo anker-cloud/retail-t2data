@@ -41,14 +41,13 @@ const TypingIndicator = () => {
     );
 };
 
-// ✅ Suggested Questions Array
+// Suggested Questions Array
 const suggestedQuestions = [
-  { heading: 'Top Consumed Parts', question: 'Provide the list of Top 20 consumed part under Running Repair from 01-01-2025 to 01-06-2025 (Use Part Number as the Unique Key and the Output should be Part Number, Part Descp & Count in decending order.' },
-  { heading: 'Dealers With Highest Consumption', question: 'List the Top 20 Dealers with highest part consumption under running repair from 2025-01-01 To 2025-06-01. (Use Parent Group Code & Location Code as unique Key, Eg. RDM01-RDM2 and do the calculation as in the description and display with the unqiue key with Dealer Name, Value in decending order.'},
-  { heading: 'Zones With Maximum Parts', question: 'List the Top Zone (Dealer Zone) & Area Office (Dealer Area Office) with highest part consumption. for full data' },
-  { heading: 'Top Models and Families', question: 'List the Top 20 (MODEL_GROP) & (FAMLY_DESC) with highest part consumption between Jan 2025 to June 2025' },
-  { heading: 'Highest Cost Replacement Parts', question: 'Query for Top 10 Part which has been replaced in BOLERO & Bolero BS6 for entire data' },
-  { heading: 'Most Frequently Replaced Parts', question: 'Give the list of most frequently replaced parts for BOLERO & Bolero BS6 by Quantity as well as Value in West Zone, Bhopal Area Office, for the dealer SOMYA VEHICLE SOLUTIONS PVT LTD at the RASULIYA_3S location for entire data' },
+  { heading: 'Top Consumed Parts', question: 'Provide the list of Top 20 consumed part under Running Repair from 01-01-2025 to 01-06-2025 Use Part Number as the Unique Key and the Output should be Part Number, Part Descp & Count in decending order.' },
+  { heading: 'Zones With Maximum Parts', question: 'List the Top Zone (Dealer Zone) & Area Office (Dealer Area Office) with highest part consumption for entire data' },
+  { heading: 'Service Profitability & Labour Efficiency', question: 'For the top 5 locations with the highest labour rate, identify the most and least efficient labour codes by comparing the total billed labour amount (labrAmount) against the total standard hours (standrd_hrs) for the past six months.' },
+  { heading: 'Turnaround Time & Service Advisor Performance', question: 'Identify the Top 5 Service Advisors (sa_emply_name) with the best average Turnaround Time (TAT in hours, calculated as difference between closd_date and ro_datetime) for Running Repair service type for last 12 months. Cross reference this with the proportion of Revisit Repair Orders (revist_flag = Y) they handle to ensure quality of speed.' },
+  { heading: 'Customer Feedback(Verbatim) Analysis', question: 'Do a customer sentiment analysis across dealerships and give top 10 verbatims of unhappy customers and the trend of dealerships where they occur' },
 ];
 
 const ChatInterface = ({ username, sessionId }) => {
@@ -146,7 +145,7 @@ const ChatInterface = ({ username, sessionId }) => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* ✅ Suggested Questions Section */}
+                {/* Suggested Questions Section */}
                 <div className="suggested-questions">
                     {suggestedQuestions.map((suggestion, index) => (
                         <div

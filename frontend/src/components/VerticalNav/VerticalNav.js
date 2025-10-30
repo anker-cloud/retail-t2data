@@ -56,8 +56,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import './VerticalNav.css';
 
-// ✅ Import logo properly from assets folder (no dashes in variable names)
-import projectvihaanlogo from '../../assets/project-vihaan-logo.png'; // make sure the file & path exist
+// Import logo properly from assets folder (no dashes in variable names)
+import projectvihaanlogo from '../../assets/anker.png'; // make sure the file & path exist
 
 // Define SVG icons
 const ChatIcon = () => (
@@ -106,7 +106,7 @@ const VerticalNav = () => {
         </li>
       </ul>
 
-      {/* ✅ Logo at bottom */}
+      {/* Logo at bottom */}
       <div className="bottom-logo">
         <img src={projectvihaanlogo} alt="Project Vihaan Logo" />
       </div>
