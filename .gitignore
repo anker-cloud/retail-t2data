@@ -22,6 +22,9 @@ my_agent_data.db
 # Dependencies folder
 node_modules/
 
+# Cache folders inside node_modules
+**/node_modules/**/.cache/
+
 # Production build output
 build/
 
