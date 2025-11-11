@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
-import MahindraRiseBLACK from "../../assets/Mahindra Rise BLACK.png";
+import MahindraRiseBLACK from "../../assets/anker.png";
 
 const LoginPage = ({ onLogin }) => {
     const [userId, setUserId] = useState('');

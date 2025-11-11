@@ -57,7 +57,7 @@ import { NavLink } from 'react-router-dom';
 import './VerticalNav.css';
 
 // Import logo properly from assets folder (no dashes in variable names)
-import projectvihaanlogo from '../../assets/project-vihaan-logo.png'; // make sure the file & path exist
+import projectvihaanlogo from '../../assets/anker.png'; // make sure the file & path exist
 
 // Define SVG icons
 const ChatIcon = () => (
