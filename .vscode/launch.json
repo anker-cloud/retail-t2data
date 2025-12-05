@@ -11,7 +11,7 @@
             "env": {
                 "FLASK_APP": "backend\\app.py",
                 "FLASK_DEBUG": "1",
-                "GOOGLE_API_KEY": "AIzaSyAHoBwft3irOJsHQJDLcfWPSbxRNPrwqek",
+                "GOOGLE_API_KEY": "put key here",
                 "GOOGLE_GENAI_USE_VERTEXAI": "0",
                 "PROJECT_ID": "agentic-data",
                 "LOCATION": "asia-south1"
